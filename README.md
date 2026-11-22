@@ -6,9 +6,15 @@
 ## 装
 
 ```sh
-brew install douwantech/banzi/ship
+curl -fsSL https://raw.githubusercontent.com/douwantech/banzi/main/install.sh | sh
 ship doctor
 ```
+
+装到 `~/.local/bin`，无需 token。装完把 `~/.local/bin` 加进 PATH。
+
+> Homebrew 也可以（`brew install douwantech/banzi/ship`），但 ship 是未签名二进制，
+> cask 会打上 quarantine，首次运行要 Gatekeeper 联网核验——**墙内的机器会卡住**。
+> 所以推荐上面的 curl 方式（curl 下载不带 quarantine，直接能跑）。等做了签名+公证再把 brew 转正。
 
 ## 工具
 
