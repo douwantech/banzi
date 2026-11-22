@@ -1,0 +1,43 @@
+# 班子 · GoReleaser：一个 tag 就编译全架构、建 GitHub Release、并自动更新 Homebrew tap。
+# 用法：git tag vX.Y.Z && git push --tags → GitHub Action（或本地 goreleaser release）发版。
+version: 2
+
+project_name: banzi
+
+builds:
+  - id: ship
+    main: ./cmd/ship
+    binary: ship
+    env: [CGO_ENABLED=0]
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.Version={{ .Version }}
+
+archives:
+  - id: ship
+    ids: [ship]
+    name_template: "ship_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: douwantech
+    name: banzi
+
+# 自动把 ship 的 cask 写进私有 tap 仓库 douwantech/homebrew-banzi
+# → 之后 brew install douwantech/banzi/ship（私有，需 HOMEBREW_GITHUB_API_TOKEN）。
+# 用 cask（不是 formula）：Homebrew 现在对预编译二进制走 cask，goreleaser 会自动
+# 去掉 Gatekeeper 隔离（未签名二进制也能直接跑）。
+homebrew_casks:
+  - name: ship
+    ids: [ship]
+    repository:
+      owner: douwantech
+      name: homebrew-banzi
+    directory: Casks
+    homepage: "https://github.com/douwantech/banzi"
+    description: "iOS 上架命令行（班子）：把 Fastlane 的 iOS 流程包成固定子命令 + 护栏"

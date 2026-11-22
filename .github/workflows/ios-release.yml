@@ -1,0 +1,34 @@
+# 班子 · iOS 发布工作流（可复用模板）。放到 App 仓库的 .github/workflows/ 下。
+# 跑在 GitHub 托管的 macOS runner（按分钟计费、跑完就关）。按 tag 或手动触发。
+name: iOS 发布
+on:
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "ship 子命令（build / beta / release）"
+        required: true
+        default: "beta"
+  push:
+    tags: ["v*"]
+jobs:
+  ship:
+    runs-on: macos-15          # Apple 芯片 macOS runner
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: 装 ship
+        run: brew install douwantech/banzi/ship
+      - name: 装 fastlane
+        run: brew install fastlane
+      - name: 自检
+        run: ship doctor || true
+      - name: 发布
+        env:
+          # 签名密钥：CI 用 GitHub Actions 加密 secret（自动构建不走每次人工审批；
+          # 人工把关放在“是否真的提交送审”那一步）。
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        run: ship ${{ github.event.inputs.lane || 'beta' }}

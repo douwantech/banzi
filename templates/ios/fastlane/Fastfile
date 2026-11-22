@@ -1,0 +1,72 @@
+# 班子 · iOS 标准 Fastfile（模板）
+# ship <子命令> 调这里对应的 lane。复制 templates/ios 到你的 App 仓库，按 banzi.yaml / 环境变量填值。
+#
+# 密钥全部来自环境变量，不写死在这里：
+#   ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8        App Store Connect API Key（.p8 内容）
+#   MATCH_PASSWORD / MATCH_GIT_URL                  证书库（fastlane match）
+# CI 里这些放 GitHub Actions 加密 secret；本地用你的密钥管理工具注入到环境变量后再跑 ship。
+
+default_platform(:ios)
+
+def asc_api_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_P8"),
+    is_key_content_base64: true,
+    in_house: false
+  )
+end
+
+platform :ios do
+  desc "证书/描述文件：同步签名身份（match，只读模式，CI 用）"
+  lane :certs do
+    match(type: "appstore", readonly: true, api_key: asc_api_key)
+  end
+
+  desc "出包：编译并导出 .ipa"
+  lane :build do
+    match(type: "appstore", readonly: true, api_key: asc_api_key)
+    gym(export_method: "app-store", clean: true, output_directory: "build")
+  end
+
+  desc "传 TestFlight"
+  lane :beta do
+    build
+    pilot(api_key: asc_api_key, skip_waiting_for_build_processing: true)
+  end
+
+  desc "上架送审：元数据 + 截图 + 二进制，提交审核"
+  lane :release do
+    precheck(api_key: asc_api_key)
+    build
+    deliver(
+      api_key: asc_api_key,
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      skip_screenshots: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  desc "自动截图"
+  lane :shots do
+    snapshot
+    frameit(silver: true) rescue nil
+  end
+
+  desc "版本号 / build 号自增（build 号用时间戳，稳不回退）"
+  lane :bump do
+    increment_build_number(build_number: Time.now.strftime("%Y%m%d%H%M"))
+  end
+
+  desc "在 App Store Connect 新建 App"
+  lane :app_create do
+    produce(
+      app_name: ENV.fetch("APP_NAME"),
+      app_identifier: ENV.fetch("APP_IDENTIFIER"),
+      api_key: asc_api_key
+    )
+  end
+end

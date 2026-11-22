@@ -1,0 +1,15 @@
+# 防泄露闸：每次 push / PR 扫描密钥与凭据，发现就红掉，挡在公开仓库之外。
+name: 密钥扫描
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # 扫全历史
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
