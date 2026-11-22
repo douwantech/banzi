@@ -2,11 +2,10 @@
 app:
   name: "示例 App"
   identifier: "com.example.app"      # bundle id
-  project: "example"                 # 项目代号（用于隔离与取对密钥）
+  project: "example"                 # 项目代号（用于隔离）
+# App Store Connect 的数字 app id（ship 的 beta/release 用），从 ASC 后台拿：
+asc_app_id: "123456789"
 apple:
   dev_team_id: ""                    # Developer Portal team id
-  asc_team_id: ""                    # App Store Connect team id
-# 密钥不写在这里。CI 放 GitHub Actions secret；本地用你的密钥管理工具注入：
-#   需要的环境变量：ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 MATCH_PASSWORD MATCH_GIT_URL
-signing:
-  match_git_url: ""                  # 证书库仓库（私有）
+# 密钥不写这里。CI 放 GitHub Actions 加密 secret；本地用你的密钥管理工具注入环境变量：
+#   ASC_KEY_ID  ASC_ISSUER_ID  ASC_KEY_P8   （App Store Connect API Key）

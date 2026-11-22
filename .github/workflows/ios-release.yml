@@ -1,5 +1,5 @@
-# 班子 · iOS 发布工作流（可复用模板）。放到 App 仓库的 .github/workflows/ 下。
-# 跑在 GitHub 托管的 macOS runner（按分钟计费、跑完就关）。按 tag 或手动触发。
+# banzi · iOS 发布工作流（可复用模板）。放到 App 仓库的 .github/workflows/ 下。
+# 跑在 GitHub 托管的 macOS runner（按分钟计费、跑完就关）。底层走 asc（无 Ruby）。
 name: iOS 发布
 on:
   workflow_dispatch:
@@ -12,23 +12,27 @@ on:
     tags: ["v*"]
 jobs:
   ship:
-    runs-on: macos-15          # Apple 芯片 macOS runner
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: 装 ship
-        run: brew install douwantech/banzi/ship
-      - name: 装 fastlane
-        run: brew install fastlane
+        run: curl -fsSL https://raw.githubusercontent.com/douwantech/banzi/main/install.sh | sh
+      - name: 装 asc
+        run: curl -fsSL https://asccli.sh/install | bash
       - name: 自检
         run: ship doctor || true
-      - name: 发布
+      - name: 构建
         env:
-          # 签名密钥：CI 用 GitHub Actions 加密 secret（自动构建不走每次人工审批；
-          # 人工把关放在“是否真的提交送审”那一步）。
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-        run: ship ${{ github.event.inputs.lane || 'beta' }}
+        run: ship build
+      # beta/release 的具体 .ipa 路径按你的工程来；下面示例把最新产物推 TestFlight：
+      - name: 发布
+        env:
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: ship ${{ github.event.inputs.lane || 'beta' }} "$(ls -t build/*.ipa | head -1)"
