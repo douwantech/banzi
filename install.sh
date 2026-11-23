@@ -2,9 +2,9 @@
 # banzi · ship 安装器。公开仓库，无需 token：
 #   curl -fsSL https://raw.githubusercontent.com/douwantech/banzi/main/install.sh | sh
 #
-# 为什么用 curl 而不是 Homebrew：ship 是未签名的 Go 二进制；Homebrew cask 会给它打上
-# quarantine/provenance，首次运行时 macOS Gatekeeper 要联网核验，墙内的机器会卡住。
-# curl 下载的二进制不带这些标记，直接能跑。装到 ~/.local/bin，不碰系统目录。
+# 为什么用 curl 而不是 Homebrew：Homebrew cask 会给二进制打上 quarantine/provenance，首次运行时
+# macOS Gatekeeper 要联网核对公证记录，网络受限的机器会卡住。curl 下载的二进制不带这些标记，
+# 直接能跑。装到 ~/.local/bin，不碰系统目录。
 set -eu
 
 REPO="douwantech/banzi"
