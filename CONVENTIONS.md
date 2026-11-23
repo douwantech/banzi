@@ -44,9 +44,10 @@ banzi 的命令行工具首先是给 **AI agent** 用的。一个 agent 只通�
 - **语言用 Go，不是 Rust + Flux**【按我们的改】：agent-cli 用 Flux 做形式化验证（重）。
   我们的工具多是「胶水」（调外部 CLI、打 API），不值当上那套；用 Go + 测试替代。
   个别性能 / 安全核心可用 Rust。
-- **分发用 curl 安装器为主**【按我们的改】：未签名二进制经 Homebrew 安装会被打上 quarantine，
-  首次运行时 Gatekeeper 的在线核验在网络受限环境下会卡住；curl 下载不带这个标记，直接能跑。
-  做了签名 + 公证后再把 Homebrew 转正。（见 [`install.sh`](install.sh)）
+- **分发用 curl 安装器为主**【按我们的改】：经 Homebrew 安装的二进制会被打上 quarantine，
+  首次运行时 Gatekeeper 要在线核对；发布的 macOS 二进制有签名 + 公证，联网的机器一次就过，
+  但命令行二进制带不了公证票据，网络受限的环境里这一步仍会卡住。curl 下载不带这个标记，直接能跑。
+  （见 [`install.sh`](install.sh)）
 - **不上** 5 平台 release、pure/effect 强分层那套重机制【不采纳】——按需，别过度工程。
 
 ## 落地

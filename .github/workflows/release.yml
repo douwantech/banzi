@@ -1,0 +1,57 @@
+# banzi · 发版：打 v* tag 就跑。GoReleaser 编译全架构 → 签名 + 公证 macOS 二进制 → 建 GitHub Release → 更新 Homebrew tap。
+# 证书和密钥放在受保护的 release 环境里（Settings → Environments → release）：只有 v* tag 的这个任务读得到，
+# 还可以给环境加「必须有人批准」。需要的 secret 见 README「发版」。
+name: 发版
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write            # 建 GitHub Release
+jobs:
+  release:
+    runs-on: ubuntu-latest   # 签名公证不依赖 macOS：GoReleaser 自带实现，Linux 上就能做
+    environment: release
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # GoReleaser 要完整历史算版本和更新说明
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: 测试
+        run: go test ./...
+      - name: 签名材料齐不齐
+        # 缺一样就在发布之前停下：否则会先发出一个未签名的 Release，再在后面失败。
+        env:
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+        run: |
+          missing=""
+          for name in MACOS_SIGN_P12 MACOS_SIGN_PASSWORD MACOS_NOTARY_ISSUER_ID MACOS_NOTARY_KEY_ID MACOS_NOTARY_KEY HOMEBREW_TAP_DEPLOY_KEY; do
+            eval "value=\${$name:-}"
+            [ -n "$value" ] || missing="$missing $name"
+          done
+          [ -z "$missing" ] || { echo "release 环境里缺这些 secret：$missing（见 README「发版」）" >&2; exit 1; }
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+      - name: 核对 macOS 二进制确实签了名
+        run: |
+          # 配置被改坏、签名这步悄悄跳过时这里要红。
+          for f in dist/ship_darwin_*/ship; do
+            grep -a -q "Developer ID Application" "$f" || { echo "$f 没有 Developer ID 签名" >&2; exit 1; }
+          done
