@@ -20,7 +20,7 @@ ship doctor
 ## 工具
 
 - **ship** —— iOS 上架。在 [`asc`](https://github.com/rorkai/App-Store-Connect-CLI)（App Store Connect CLI，Go、无 Ruby）
-  之上套一层固定流程 + 护栏：`ship doctor | build | bump | certs | shots | beta | release | notarize`。
+  之上套一层固定流程 + 护栏：`ship doctor | build | bump | certs | shots | check | beta | release | notarize`。
   跑在 GitHub Actions 的 macOS runner（按分钟、跑完就关），也能本地 Mac 跑。先 `ship doctor`。
   模板见 [`templates/ios/`](templates/ios/)（banzi.yaml + 可复用发布工作流）。设计见 [`CONVENTIONS.md`](CONVENTIONS.md)。
   需要 asc：`curl -fsSL https://asccli.sh/install | bash`。
