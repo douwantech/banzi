@@ -8,4 +8,5 @@ asc_app_id: "123456789"
 apple:
   dev_team_id: ""                    # Developer Portal team id
 # 密钥不写这里。CI 放 GitHub Actions 加密 secret；本地用你的密钥管理工具注入环境变量：
-#   ASC_KEY_ID  ASC_ISSUER_ID  ASC_KEY_P8   （App Store Connect API Key）
+#   ASC_KEY_ID  ASC_ISSUER_ID  ASC_PRIVATE_KEY   （App Store Connect API Key；私钥填 .p8 的文本，
+#   也可以换成 ASC_PRIVATE_KEY_B64 或 ASC_PRIVATE_KEY_PATH）
